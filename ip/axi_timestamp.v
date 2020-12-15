@@ -2,7 +2,7 @@
 
 module axi_timestamp(
     input  wire        s_axi_aclk,
-    input  wire        s_axi_arestn,
+    input  wire        s_axi_aresetn,
 
     input  wire [ 3:0] s_axi_awaddr,
     input  wire [ 2:0] s_axi_awprot,
@@ -26,9 +26,9 @@ module axi_timestamp(
     output wire [31:0] s_axi_rdata,
     output wire [ 1:0] s_axi_rresp,
     output wire        s_axi_rvalid,
-    input  wire        s_axi_rready
+    input  wire        s_axi_rready,
 
-    output wire [63:0] counter_out;
+    output wire [63:0] counter_out
     );
 
     reg [63:0] counter_reg;
@@ -36,8 +36,8 @@ module axi_timestamp(
     wire [63:0] counter_set_val;
 
     always @(posedge s_axi_aclk) begin
-        if (~s_axi_arestn) begin
-            counter_reg <= {(COUNTER_LENGTH){1'b0}};
+        if (~s_axi_aresetn) begin
+            counter_reg <= 64'b0;
         end else if (counter_set) begin
             counter_reg <= counter_set_val;
         end else begin
@@ -124,6 +124,7 @@ module axi_timestamp(
                     counter_set_val_reg <= counter_set_val_reg;
                     counter_set_trigger <= 1'b0;
                 end
+                endcase
             end else begin
                 if (counter_set_trigger) begin
                     counter_set_trigger <= 1'b0;
@@ -135,9 +136,7 @@ module axi_timestamp(
     assign counter_set_val = counter_set_val_reg;
 
     // write response
-    reg axi_bvalid_buf;
     reg [1:0] axi_bresp_buf;
-    assign s_axi_bvalid = axi_bvalid_buf;
     assign s_axi_bresp = axi_bvalid_buf;
 
     always @( posedge s_axi_aclk ) begin
@@ -158,12 +157,11 @@ module axi_timestamp(
     reg axi_arready_buf;
     reg [3:0] axi_araddr_buf;
     assign s_axi_arready = axi_arready_buf;
-    assign s_axi_araddr = axi_araddr_buf;
     // read address
     always @(posedge s_axi_aclk) begin
         if (s_axi_aresetn == 1'b0) begin
-            axi_arready <= 1'b0;
-            axi_araddr  <= 32'b0;
+            axi_arready_buf <= 1'b0;
+            axi_araddr_buf  <= 4'b0;
         end else begin
             if (~axi_arready_buf && s_axi_arvalid) begin
                 axi_arready_buf <= 1'b1;
@@ -219,4 +217,4 @@ module axi_timestamp(
         end
     end
 
-endmodule;
+endmodule

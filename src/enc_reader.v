@@ -9,7 +9,8 @@ module enc_reader(
     output [63:0] m_axis_tdata, // count
     output [ 0:0] m_axis_tuser, // state
     input         m_axis_tready,
-    output        m_axis_tvalid
+    output        m_axis_tvalid,
+    output        m_axis_tlast
 );
 
     reg enc_buf;
@@ -17,11 +18,13 @@ module enc_reader(
         enc_buf <= enc_in;
     end
 
-    wire changed = (enc_buf == enc_in);
+    wire changed = (enc_buf != enc_in);
     wire state   = enc_in;
 
     assign m_axis_tdata = counter_in;
     assign m_axis_tuser = state;
     assign m_axis_tvalid = changed;
+    //assign m_axis_tlast = changed;
+    assign m_axis_tlast = 1'b0;
 
-endmodule;
+endmodule

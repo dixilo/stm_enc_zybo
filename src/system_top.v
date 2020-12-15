@@ -23,51 +23,7 @@ module system_top(
     inout FIXED_IO_ps_porb,
     inout FIXED_IO_ps_srstb,
     
-    input rot_a,
-    input rot_b,
-    input rot_z,
-    input ex_sync, 
-    output fanout_0,
-    output fanout_1,
-    output [7:0] fanout_jb);
-
-    assign fanout_0 = ex_sync;
-    assign fanout_1 = ex_sync;
-    
-    assign fanout_jb = {8{ex_sync}};
-
-    wire sync_out;
-    wire uart;
-    wire f_clk;
-    wire f_rstn;
-
-    reg [7:0] chat_cnt;
-
-    sync_splitter i_sync_splitter
-        (.sync_in(ex_sync),
-         .clk(f_clk),
-         .rstn(f_rstn),
-         .sync_out(sync_out),
-         .uart(uart));
-
-    localparam CHAT_NUM = 20;
-
-    wire z_red = (chat_cnt >= CHAT_NUM);
-
-    // chattering reduction for the z-pulse
-    always @(posedge f_clk) begin
-        if (~f_rstn) begin
-            chat_cnt <= 8'b0;
-        end
-        else begin
-            if (rot_z & (chat_cnt < CHAT_NUM))
-                chat_cnt <= chat_cnt + 1;
-            else if (~rot_z)
-                chat_cnt <= 8'b0;
-            else
-                chat_cnt <= chat_cnt;
-        end
-    end
+    input enc_in);
 
     system_wrapper i_system_wrapper
         (.DDR_addr(DDR_addr),
@@ -92,13 +48,6 @@ module system_top(
         .FIXED_IO_ps_porb(FIXED_IO_ps_porb),
         .FIXED_IO_ps_srstb(FIXED_IO_ps_srstb),
 
-        .f_clk(f_clk),
-        .f_rstn(f_rstn),
-        
-        .rot_a(rot_a),
-        .rot_b(rot_b),
-        .rot_z(z_red),
-        .ex_sync(sync_out),
-        .uart(uart));
+        .enc_in(enc_in));
 
 endmodule
