@@ -38,7 +38,13 @@ proc axi_connect {p_address p_name} {
                        -of_objects $p_cell]
 
     if {($p_intf_clock ne "") && ($p_intf_reset eq "")} {
-        set p_intf_reset [get_property CONFIG.ASSOCIATED_RESET ${p_intf_clock}]
+        set p_intf_cand [get_property CONFIG.ASSOCIATED_RESET ${p_intf_clock}]
+        set p_intf_cand [split $p_intf_cand ":"]
+        foreach cand $p_intf_cand {
+            puts $cand
+        }
+        set p_intf_reset [lrange $p_intf_cand 0 0]
+        puts $p_intf_reset
         if {$p_intf_reset ne ""} {
             set p_intf_reset [get_bd_pins -filter "NAME == $p_intf_reset" -of_objects $p_cell]
         }
