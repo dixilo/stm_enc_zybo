@@ -94,6 +94,19 @@ set_property -dict [list \
     CONFIG.C_RX_FIFO_PE_THRESHOLD {5} \
     CONFIG.C_AXIS_TUSER_WIDTH {4}] [get_bd_cells axi_fifo_mm_s]
 
+# DEBUG
+set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {enc_reader_m_axis}]
+set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {axis_data_fifo_M_AXIS}]
+set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {enc_packet_m_axis}]
+set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {util_reduced_logic_Res }]
+
+apply_bd_automation -rule xilinx.com:bd_rule:debug -dict [list \
+    [get_bd_intf_nets enc_packet_m_axis] {AXIS_SIGNALS "Data and Trigger" CLK_SRC "/sys_ps7/FCLK_CLK0" SYSTEM_ILA "Auto" APC_EN "0" } \
+    [get_bd_intf_nets enc_reader_m_axis] {AXIS_SIGNALS "Data and Trigger" CLK_SRC "/sys_ps7/FCLK_CLK0" SYSTEM_ILA "Auto" APC_EN "0" } \
+    [get_bd_intf_nets axis_data_fifo_M_AXIS] {AXIS_SIGNALS "Data and Trigger" CLK_SRC "/sys_ps7/FCLK_CLK0" SYSTEM_ILA "Auto" APC_EN "0" } \
+    [get_bd_nets util_reduced_logic_Res] {PROBE_TYPE "Data and Trigger" CLK_SRC "/sys_ps7/FCLK_CLK0" SYSTEM_ILA "Auto" } \
+]
+
 # Connection
 ## sys_clk: 50 MHz
 create_bd_net sys_clk
