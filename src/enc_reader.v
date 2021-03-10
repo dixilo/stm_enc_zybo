@@ -13,18 +13,24 @@ module enc_reader(
     output        m_axis_tlast
 );
 
-    reg enc_buf;
+    reg enc_buf_0;
+    reg enc_buf_1;
+
+    reg [63:0] counter_buf;
+
+    // buffering
     always @(posedge clk) begin
-        enc_buf <= enc_in;
+        enc_buf_0 <= enc_in;
+        enc_buf_1 <= enc_buf_0;
+        counter_buf <= counter_in;
     end
 
-    wire changed = (enc_buf != enc_in);
-    wire state   = enc_in;
+    wire changed = (enc_buf_0 != enc_buf_1);
+    wire state   = enc_buf_0;
 
-    assign m_axis_tdata = counter_in;
+    assign m_axis_tdata = counter_buf;
     assign m_axis_tuser = state;
     assign m_axis_tvalid = changed;
-    //assign m_axis_tlast = changed;
-    assign m_axis_tlast = 1'b0;
+    assign m_axis_tlast = changed;
 
 endmodule
