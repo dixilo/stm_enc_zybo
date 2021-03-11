@@ -1,0 +1,9 @@
+*.xpr
+*.jou
+*.log
+*.cache
+*.hw
+*.runs
+*.srcs
+*.xml
+xgui

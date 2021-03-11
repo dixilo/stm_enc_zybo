@@ -23,7 +23,8 @@ module system_top(
     inout FIXED_IO_ps_porb,
     inout FIXED_IO_ps_srstb,
     
-    input enc_in);
+    input enc_in,
+    input irig_in);
 
     system_wrapper i_system_wrapper
         (.DDR_addr(DDR_addr),
@@ -48,6 +49,7 @@ module system_top(
         .FIXED_IO_ps_porb(FIXED_IO_ps_porb),
         .FIXED_IO_ps_srstb(FIXED_IO_ps_srstb),
 
-        .enc_in(enc_in));
+        .enc_in(enc_in),
+        .irig_in(irig_in));
 
 endmodule

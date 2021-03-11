@@ -29,7 +29,7 @@ module b002_decoder(
     reg [2:0]  state;       // state for the state machine below
     reg        irig_buf;
     reg        pw_proc;     // indicates pulse width measurement going on
-    reg        pw_proc_buf; // its buffer
+    reg        pw_proc_buf;
     reg [19:0] pulse_width; // pulse width
     reg [63:0] rising_edge, falling_edge, sync_edge;
     wire       rising, falling;
@@ -41,17 +41,17 @@ module b002_decoder(
     reg [99:0] output_buf;
 
     // irig_bufer
-    always @(posedge clk) begin
+    always @(posedge clk_50MHz) begin
         irig_buf <= irig_in;
     end
 
     // rising edge
-    assign rising = (irig_in == 1) & (irig_buf == 0);
+    assign rising = (irig_in == 1) && (irig_buf == 0);
     // falling edge
-    assign falling = (irig_in == 0) & (irig_buf == 1);
+    assign falling = (irig_in == 0) && (irig_buf == 1);
 
     // pulse width
-    always @(posedge clk) begin
+    always @(posedge clk_50MHz) begin
         if (~resetn) begin
             pw_proc <= 1'b0;
             pulse_width <= 20'b0;
@@ -71,6 +71,10 @@ module b002_decoder(
             end
         end
     end
+    
+    always @(posedge clk_50MHz) begin
+        pw_proc_buf <= pw_proc;
+    end
 
     assign pw_valid = (pw_proc == 0) & (pw_proc_buf == 1);
 
@@ -88,7 +92,7 @@ module b002_decoder(
     end
 
     // state machine
-    always @(posedge clk) begin
+    always @(posedge clk_50MHz) begin
         if (~resetn) begin
             state <= STATE_WAITING;
             bit_position <= 8'b1;

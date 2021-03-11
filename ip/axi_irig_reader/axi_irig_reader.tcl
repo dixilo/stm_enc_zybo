@@ -14,6 +14,7 @@ set_property board_part $p_board [current_project]
 set proj_fileset [get_filesets sources_1]
 add_files -norecurse -scan_for_includes -fileset $proj_fileset [list \
     axi_irig_reader.v\
+    b002_decoder.v
 ]
 set_property "top" "axi_irig_reader" $proj_fileset
 

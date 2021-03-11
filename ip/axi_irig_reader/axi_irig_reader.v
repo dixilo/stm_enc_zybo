@@ -4,7 +4,7 @@ module axi_irig_reader(
     input  wire        s_axi_aclk,
     input  wire        s_axi_aresetn,
 
-    input  wire [ 3:0] s_axi_awaddr,
+    input  wire [ 4:0] s_axi_awaddr,
     input  wire [ 2:0] s_axi_awprot,
     input  wire        s_axi_awvalid,
     output wire        s_axi_awready,
@@ -18,7 +18,7 @@ module axi_irig_reader(
     output wire        s_axi_bvalid,
     input  wire        s_axi_bready,
 
-    input  wire [ 3:0] s_axi_araddr,
+    input  wire [ 4:0] s_axi_araddr,
     input  wire [ 2:0] s_axi_arprot,
     input  wire        s_axi_arvalid,
     output wire        s_axi_arready,
@@ -79,7 +79,7 @@ module axi_irig_reader(
     end
 
     // AXI AWADDR
-    reg [3:0] axi_awaddr_buf;
+    reg [4:0] axi_awaddr_buf;
 
     always @( posedge s_axi_aclk ) begin
         if (~s_axi_aresetn) begin
@@ -100,35 +100,12 @@ module axi_irig_reader(
             ;
         end else begin
             if (slv_reg_wren) begin
-            /*
-                case (axi_awaddr_buf[3:2])
-                3'h2: begin
-                    counter_set_val_reg[31:0] <= s_axi_wdata[31:0];
-                    counter_set_trigger <= 1'b0;
-                end
-                3'h3: begin
-                    counter_set_val_reg[63:32] <= s_axi_wdata[31:0];
-                    counter_set_trigger <= 1'b1;
-                end
-                default: begin
-                    counter_set_val_reg <= counter_set_val_reg;
-                    counter_set_trigger <= 1'b0;
-                end
-                endcase
-            */
                 ;
             end else begin
                 ;
-                /*
-                if (counter_set_trigger) begin
-                    counter_set_trigger <= 1'b0;
-                end
-                */
             end
         end
     end
-    assign counter_set = counter_set_trigger;
-    assign counter_set_val = counter_set_val_reg;
 
     // write response
     reg [1:0] axi_bresp_buf;
@@ -150,7 +127,7 @@ module axi_irig_reader(
     end
 
     reg axi_arready_buf;
-    reg [3:0] axi_araddr_buf;
+    reg [4:0] axi_araddr_buf;
     reg axi_rvalid_buf;
     reg axi_rresp_buf;
 
@@ -165,7 +142,7 @@ module axi_irig_reader(
     always @(posedge s_axi_aclk) begin
         if (s_axi_aresetn == 1'b0) begin
             axi_arready_buf <= 1'b0;
-            axi_araddr_buf  <= 4'b0;
+            axi_araddr_buf  <= 32'b0;
         end else begin
             if (~axi_arready_buf && s_axi_arvalid) begin
                 axi_arready_buf <= 1'b1;

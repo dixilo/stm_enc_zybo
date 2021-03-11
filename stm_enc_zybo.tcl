@@ -49,6 +49,9 @@ set_property -dict [list \
 # AXI timestamp
 create_bd_cell -type ip -vlnv [latest_ip axi_timestamp] axi_timestamp
 
+# AXI IRIG reader
+create_bd_cell -type ip -vlnv [latest_ip axi_irig_reader] axi_irig_reader
+
 # Interconnect
 create_bd_cell -type ip -vlnv [latest_ip axi_interconnect] axi_interconnect
 set_property -dict [list CONFIG.NUM_MI {2}] [get_bd_cells axi_interconnect]
@@ -142,6 +145,7 @@ connect_bd_net -net [get_bd_nets sys_ic_resetn] [get_bd_pins axi_interconnect/AR
 create_bd_net counter
 connect_bd_net -net [get_bd_nets counter] [get_bd_pins axi_timestamp/counter_out]
 connect_bd_net -net [get_bd_nets counter] [get_bd_pins enc_reader/counter_in]
+connect_bd_net -net [get_bd_nets counter] [get_bd_pins axi_irig_reader/counter_in]
 
 
 ## AXI bus
@@ -149,6 +153,7 @@ connect_bd_intf_net [get_bd_intf_pins sys_ps7/M_AXI_GP0] [get_bd_intf_pins axi_i
 axi_connect 0x43c00000 axi_timestamp
 axi_connect 0x43c10000 axi_fifo_mm_s
 axi_connect 0x41200000 axi_gpio
+axi_connect 0x43C20000 axi_irig_reader
 
 ## AXIS connection
 connect_bd_intf_net [get_bd_intf_pins enc_reader/m_axis] [get_bd_intf_pins axis_data_fifo/S_AXIS]
@@ -165,6 +170,7 @@ connect_bd_net [get_bd_pins xlconcat_test/dout] [get_bd_pins util_reduced_logic/
 
 # Interface pin
 make_bd_pins_external  -name enc_in [get_bd_pins xlconcat_test/In0]
+make_bd_pins_external  -name irig_in [get_bd_pins axi_irig_reader/irig_in]
 
 
 save_bd_design
@@ -179,16 +185,16 @@ set_property top system_top [current_fileset]
 
 
 # Synthesize
-# launch_runs synth_1
-# wait_on_run synth_1
-# open_run synth_1
-# report_timing_summary -file timing_synth.log
+launch_runs synth_1
+wait_on_run synth_1
+open_run synth_1
+report_timing_summary -file timing_synth.log
 
-# # Implementation
-# launch_runs impl_1 -to_step write_bitstream
-# wait_on_run impl_1
-# open_run impl_1
-# report_timing_summary -file timing_impl.log
+# Implementation
+launch_runs impl_1 -to_step write_bitstream
+wait_on_run impl_1
+open_run impl_1
+report_timing_summary -file timing_impl.log
 
 # Make .sdk folder
 # file copy -force $project_name.runs/impl_1/system_top.sysdef noos/system_top.hdf
