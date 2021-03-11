@@ -55,6 +55,8 @@ module b002_decoder(
         if (~resetn) begin
             pw_proc <= 1'b0;
             pulse_width <= 20'b0;
+            rising_edge <= 64'b0;
+            falling_edge <= 64'b0;
         end begin
             if (rising) begin
                 rising_edge <= counter_in;
@@ -97,6 +99,8 @@ module b002_decoder(
             state <= STATE_WAITING;
             bit_position <= 8'b1;
             sub_position <= 4'b1;
+            sync_edge <= 63'b0;
+            output_buf <= 100'b0;
         end else begin
             if (pw_valid) begin
                 case (state)
@@ -118,7 +122,10 @@ module b002_decoder(
                     STATE_PROCESSING: begin
                         if (bit_position == 99) begin
                             case (pulse_type)
-                                IRIG_PI: state <= STATE_PI_1;
+                                IRIG_PI: begin
+                                    state <= STATE_PI_1;
+                                    bit_position <= 8'b1;
+                                end
                                 default: state <= STATE_WAITING;
                             endcase
                         end else if (sub_position == 4'd9) begin
