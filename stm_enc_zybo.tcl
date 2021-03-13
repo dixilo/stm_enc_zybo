@@ -97,18 +97,6 @@ set_property -dict [list \
     CONFIG.C_RX_FIFO_PE_THRESHOLD {5} \
     CONFIG.C_AXIS_TUSER_WIDTH {4}] [get_bd_cells axi_fifo_mm_s]
 
-# DEBUG
-# set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {enc_reader/m_axis}]
-# set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {axis_data_fifo/M_AXIS}]
-# set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {enc_packet/m_axis}]
-# set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {util_reduced/logic_Res }]
-
-# apply_bd_automation -rule xilinx.com:bd_rule:debug -dict [list \
-#    [get_bd_intf_nets enc_packet_m_axis] {AXIS_SIGNALS "Data and Trigger" CLK_SRC "/sys_ps7/FCLK_CLK0" SYSTEM_ILA "Auto" APC_EN "0" } \
-#    [get_bd_intf_nets enc_reader_m_axis] {AXIS_SIGNALS "Data and Trigger" CLK_SRC "/sys_ps7/FCLK_CLK0" SYSTEM_ILA "Auto" APC_EN "0" } \
-#    [get_bd_intf_nets axis_data_fifo_M_AXIS] {AXIS_SIGNALS "Data and Trigger" CLK_SRC "/sys_ps7/FCLK_CLK0" SYSTEM_ILA "Auto" APC_EN "0" } \
-#    [get_bd_nets util_reduced_logic_Res] {PROBE_TYPE "Data and Trigger" CLK_SRC "/sys_ps7/FCLK_CLK0" SYSTEM_ILA "Auto" } \
-#]
 
 # Connection
 ## sys_clk: 50 MHz
@@ -172,6 +160,32 @@ connect_bd_net [get_bd_pins xlconcat_test/dout] [get_bd_pins util_reduced_logic/
 make_bd_pins_external  -name enc_in [get_bd_pins xlconcat_test/In0]
 make_bd_pins_external  -name irig_in [get_bd_pins axi_irig_reader/irig_in]
 
+# DEBUG
+set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {irig_in_1}]
+apply_bd_automation -rule xilinx.com:bd_rule:debug -dict [list \
+    [get_bd_nets irig_in_1] {PROBE_TYPE "Data and Trigger" CLK_SRC "/sys_ps7/FCLK_CLK0" SYSTEM_ILA "Auto" } \
+]
+set_property -dict [list CONFIG.C_BRAM_CNT {2} CONFIG.C_DATA_DEPTH {65536}] [get_bd_cells system_ila_0]
+
+
+# set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {enc_reader/m_axis}]
+# set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {axis_data_fifo/M_AXIS}]
+# set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {enc_packet/m_axis}]
+# set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {util_reduced/logic_Res }]
+
+set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {enc_reader_m_axis}]
+set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {axis_data_fifo_M_AXIS}]
+set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {enc_packet_m_axis}]
+set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {enc_in_1 }]
+
+# apply_bd_automation -rule xilinx.com:bd_rule:debug -dict [list \
+#    [get_bd_intf_nets enc_packet_m_axis] {AXIS_SIGNALS "Data and Trigger" CLK_SRC "/sys_ps7/FCLK_CLK0" SYSTEM_ILA "Auto" APC_EN "0" } \
+#    [get_bd_intf_nets enc_reader_m_axis] {AXIS_SIGNALS "Data and Trigger" CLK_SRC "/sys_ps7/FCLK_CLK0" SYSTEM_ILA "Auto" APC_EN "0" } \
+#    [get_bd_intf_nets axis_data_fifo_M_AXIS] {AXIS_SIGNALS "Data and Trigger" CLK_SRC "/sys_ps7/FCLK_CLK0" SYSTEM_ILA "Auto" APC_EN "0" } \
+#    [get_bd_nets util_reduced_logic_Res] {PROBE_TYPE "Data and Trigger" CLK_SRC "/sys_ps7/FCLK_CLK0" SYSTEM_ILA "Auto" } \
+# ]
+
+
 
 save_bd_design
 validate_bd_design
@@ -184,17 +198,17 @@ import_files -force -norecurse -fileset sources_1 $project_system_dir/hdl/system
 set_property top system_top [current_fileset]
 
 
-# Synthesize
-launch_runs synth_1
-wait_on_run synth_1
-open_run synth_1
-report_timing_summary -file timing_synth.log
+# # Synthesize
+# launch_runs synth_1
+# wait_on_run synth_1
+# open_run synth_1
+# report_timing_summary -file timing_synth.log
 
-# Implementation
-launch_runs impl_1 -to_step write_bitstream
-wait_on_run impl_1
-open_run impl_1
-report_timing_summary -file timing_impl.log
+# # Implementation
+# launch_runs impl_1 -to_step write_bitstream
+# wait_on_run impl_1
+# open_run impl_1
+# report_timing_summary -file timing_impl.log
 
 # Make .sdk folder
 # file copy -force $project_name.runs/impl_1/system_top.sysdef noos/system_top.hdf

@@ -1,14 +1,14 @@
 # Standard Pmod JE
 set_property PACKAGE_PIN V12 [get_ports enc_in]
-set_property PACKAGE_PIN W16 [get_ports irig_in]
-#set_property PACKAGE_PIN J15 [get_ports rot_z]
+#set_property PACKAGE_PIN W16 [get_ports irig_in]
+set_property PACKAGE_PIN J15 [get_ports irig_in]
 #set_property PACKAGE_PIN V13 [get_ports ex_sync]
 #set_property PACKAGE_PIN U17 [get_ports fanout_0]
 #set_property PACKAGE_PIN T17 [get_ports fanout_1]
 
 set_property IOSTANDARD LVCMOS33 [get_ports enc_in]
+#set_property IOSTANDARD LVCMOS33 [get_ports irig_in]
 set_property IOSTANDARD LVCMOS33 [get_ports irig_in]
-#set_property IOSTANDARD LVCMOS33 [get_ports rot_z]
 #set_property IOSTANDARD LVCMOS33 [get_ports ex_sync]
 #set_property IOSTANDARD LVCMOS33 [get_ports fanout_0]
 #set_property IOSTANDARD LVCMOS33 [get_ports fanout_1]

@@ -67,7 +67,6 @@ int main()
 	u32 read_length;
 	u32 tmp_st;
 	int i;
-	int kai;
 	tcp_data data[2048];
 
     init_platform();
@@ -96,16 +95,8 @@ int main()
     }
     xil_printf("FIFO reset fin.\r\n");
 
-    kai = 0;
 
     while (1){
-    	if ((kai % 10 ) == 0) {
-    		tmp_st = Xil_In32(XPAR_AXI_GPIO_BASEADDR);
-    		xil_printf("fire!\r\n");
-    		Xil_Out32(XPAR_AXI_GPIO_BASEADDR, tmp_st + 1);
-    	}
-    	kai++;
-
 		while(1){ // Wait until at least one successful receive has completed
 			ret_val = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x00); // Interrupt Status Register
 			if(ret_val & (1<<26)){ // Interrupt pending
@@ -128,7 +119,7 @@ int main()
 			data[i].ts_0 = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x20);
 			data[i].state = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x20);
 
-			xil_printf("data[%d]: %08x\r\n",i, data[i].ts_0);
+			xil_printf("data[%d]: %08x %08x %08x\r\n",i, data[i].ts_0, data[i].ts_1, data[i].state);
 		}
 		usleep(1000);
     }
