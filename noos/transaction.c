@@ -11,41 +11,25 @@
 #include "xllfifo.h"
 #include "xstatus.h"
 
+#include "axi_irig_reader.h"
 
 #define DATA_LENGTH 2048
 #define SLEEP_TIME_US 100000
-#define STATUS_ADDRESS XPAR_AXI_GB_ROTARY_BASEADDR + 4
-#define SYNC_MASK 0x00000001
-#define Z_ENABLE_MASK 0x00000002
+
 
 static struct tcp_pcb *c_pcb;
-XLlFifo* FifoInstance;
+IrigReader* IrigInstance;
 
-// Encoder packet structure
 #pragma pack(1)
-typedef struct {
-    u16 header;
-    u32 stamp;
-    u32 data;
-    u16 footer;
-} tcp_data;
+typedef struct EncData{
+    u8 header;
+    u32 ts_lsb;
+    u32 ts_msb;
+    u32 status;
+    u8 filler;
+    u8 footer;
+} EncData;
 #pragma pack()
-
-
-// Data buffer
-static tcp_data intr_buf[128];
-static int intr_count = 0;
-static int test_counter = 0;
-
-// Synchronization packet handler
-void push_intr_data(u32 coarse, u32 fine){
-    int tmp_count = intr_count;
-    intr_count++;	
-    intr_buf[tmp_count].header = 0x1207;
-    intr_buf[tmp_count].stamp = coarse;
-    intr_buf[tmp_count].data = fine;
-    intr_buf[tmp_count].footer = 0x570C;
-}
 
 err_t tcp_prt(struct tcp_pcb *pcb, const char* prt_char){
     return tcp_write(pcb, prt_char, strlen(prt_char), 1);
@@ -55,11 +39,11 @@ err_t transfer_data() {
     u32 read_length;
     int i;
     int j = 0;
-    tcp_data data[DATA_LENGTH];
-    tcp_data sync;
-    tcp_data uart;
+    EncData enc_data[DATA_LENGTH];
+    IrigInfo* irig_info;
+    u32 irig_buf[6];
+
     u32 ret_val;
-    u64 ret_data;
     u32 tmp_len;
     u32 RxWord;
     u32 uart_count = 0;
@@ -72,51 +56,46 @@ err_t transfer_data() {
     usleep(SLEEP_TIME_US);
 
     while(1){ // Wait until at least one successful receive has completed
-        ret_val = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x00); // Interrupt Status Register
+        // Interrupt Status Register
+        ret_val = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x00);
         if(ret_val & (1<<26)){ // Interrupt pending
-            Xil_Out32(XPAR_AXI_FIFO_0_BASEADDR + 0x00, (1<<26) + (1<<19)); // RC clear & RFPE clear
+            // RC clear & RFPE clear
+            Xil_Out32(XPAR_AXI_FIFO_0_BASEADDR + 0x00, (1<<26) + (1<<19));
             break;
         }
     }
 
     ret_val = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x00);
-    ret_val = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x1C); // Receive Data FIFO Occupancy Register
-    read_length = ret_val/2; // timestamp (coarse) & data (fine)
+
+    // Receive Data FIFO Occupancy Register
+    ret_val = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x1C);
+    // Data packet [TS LSB][TS MSB][STATE]: 3*4 bytes
+    read_length = ret_val/3;
 
     for( i=0; i < read_length; i++ ){
-        ret_val = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x24); // Recieve Length Register
-        if( ret_val != 8 ){ // Each AXIS packet has 32 bit (timestamp) + 32 bit (data) = 64 bit = 8 bytes length
+        // Recieve Length Register
+        ret_val = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x24);
+        // Each AXIS packet has [TS LSB][TS MSB][STATE]: 3*4 bytes
+        if( ret_val != 12 ){ 
             break;
         }
 
-        data[i].stamp = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x20);
-        data[i].data = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x20);
-        data[i].header = 0x1207;
-        data[i].footer = 0xDA7A;
+        enc_data[i].ts_lsb = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x20);
+        enc_data[i].ts_msb = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x20);
+        enc_data[i].status = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x20);
+        enc_data[i].filler = 0x00;
+        enc_data[i].header = 0x99;
+        data[i].footer = 0x66;
     }
 
-    tcp_write(c_pcb, data, read_length*sizeof(*data), 1);
+    tcp_write(c_pcb, enc_data, read_length*sizeof(EncData), 1);
 
     test_counter++;
 
-    ret_val = Xil_In32(XPAR_AXI_GB_ROTARY_BASEADDR + 4);
-    if( ret_val & 0x00000001 ){
-        xil_printf("\r\nPulse detected: ");
-        Xil_Out32(XPAR_AXI_GB_ROTARY_BASEADDR + 4, ret_val & 0xFFFFFFFE);
-        sync.header = 0x1207;
-        sync.footer = 0x570C;
-        sync.stamp = Xil_In32(XPAR_AXI_GB_ROTARY_BASEADDR + 8);
-        sync.data = Xil_In32(XPAR_AXI_GB_ROTARY_BASEADDR + 12);
-        tcp_write(c_pcb, &sync, sizeof(sync), 1);
-    }
-
-    // uart
-    while ( Xil_In32(XPAR_AXI_UARTLITE_BASEADDR + 8) & 0x00000001 ){ // Status register: RX FIFO valid data
-        uart.header = 0x1207;
-        uart.footer = 0x2048;
-        uart.stamp = uart_count++;
-        uart.data = Xil_In32(XPAR_AXI_UARTLITE_BASEADDR);
-        tcp_write(c_pcb, &uart, sizeof(uart), 1);
+    if (IsReady(IrigInstance) & 0x00000001){
+        ret_val = GetIrigData(IrigInstance, irig_buf);
+        ret_val = InterpretIrig(irig_buf, irig_info);
+        tcp_write(c_pcb, irig_info, sizeof(IrigInfo), 1);
     }
 
     return ERR_OK;
@@ -125,8 +104,10 @@ err_t transfer_data() {
 err_t recv_callback(void *arg, struct tcp_pcb *tpcb,
                                struct pbuf *p, err_t err)
 {
-    u32 enc_val;
-    u32 status;
+    IrigInfo* irig_info;
+    u32 irig_buf[6];
+
+
     /* do not read the packet if we are not in ESTABLISHED state */
     if (!p) {
         tcp_close(tpcb);
@@ -136,27 +117,15 @@ err_t recv_callback(void *arg, struct tcp_pcb *tpcb,
 
     /* indicate that the packet has been received */
     tcp_recved(tpcb, p->len);
-    if (strcmp(p->payload, "e#reset_enable") == 0){
-    	status = Xil_In32(STATUS_ADDRESS);
-    	xil_printf("current status: %x\r\n", status);
-    	Xil_Out32(STATUS_ADDRESS, status | Z_ENABLE_MASK);
-    	status = Xil_In32(STATUS_ADDRESS);
-    	xil_printf("current status: %x\r\n", status);
-    } else if (strcmp(p->payload, "e#reset_disable") == 0) {
-    	status = Xil_In32(STATUS_ADDRESS);
-    	xil_printf("current status: %x\r\n", status);
-    	Xil_Out32(STATUS_ADDRESS, status & (~Z_ENABLE_MASK));
-    	status = Xil_In32(STATUS_ADDRESS);
-    	xil_printf("current status: %x\r\n", status);;
+    if (strcmp(p->payload, "e#irig") == 0){
+        xil_printf("Read irig info");
+        GetIrigData(IrigInstance, irig_buf);
+        InterpretIrig(irig_buf, irig_info);
+
+        tcp_write(tcpb, irig_buf, sizeof(IrigInfo), 1);
+    } else  {
+        xil_printf("^_^;\r\n");
     }
-
-
-    if (tcp_sndbuf(tpcb) > p->len) {
-        enc_val = Xil_In32(XPAR_AXI_GB_ROTARY_BASEADDR);
-        xil_printf("%d\r\n", enc_val);
-        err = tcp_write(tpcb, &enc_val, 4, 1);
-    } else
-        xil_printf("no space in tcp_sndbuf\n\r");
 
     /* free the received pbuf */
     pbuf_free(p);
@@ -164,8 +133,8 @@ err_t recv_callback(void *arg, struct tcp_pcb *tpcb,
     return ERR_OK;
 }
 
-/** Close a tcp session */
-static void tcp_rot_close(struct tcp_pcb *pcb)
+// TCP connection close
+static void tcp_enc_close(struct tcp_pcb *pcb)
 {
     err_t err;
 
@@ -174,17 +143,16 @@ static void tcp_rot_close(struct tcp_pcb *pcb)
         tcp_err(pcb, NULL);
         err = tcp_close(pcb);
         if (err != ERR_OK) {
-            /* Free memory with abort */
             tcp_abort(pcb);
         }
     }
 }
 
 /** Error callback, tcp session aborted */
-static void tcp_rot_err(void *arg, err_t err)
+static void tcp_enc_err(void *arg, err_t err)
 {
     LWIP_UNUSED_ARG(err);
-    tcp_rot_close(c_pcb);
+    tcp_enc_close(c_pcb);
     c_pcb = NULL;
     xil_printf("TCP connection aborted\n\r");
 }
@@ -195,21 +163,14 @@ err_t accept_callback(void *arg, struct tcp_pcb *newpcb, err_t err)
     static int connection = 1;
     u32 ret_val;
 
-    /* set the receive callback for this connection */
+    // callback registration
     tcp_recv(newpcb, recv_callback);
     c_pcb = newpcb;
-    tcp_err(c_pcb, tcp_rot_err);
-    
-    //err = tcp_prt(newpcb, "Hello, world!\r\n");
-    connection++;
-    /* just use an integer number indicating the connection id as the
-       callback argument */
-    
-    //tcp_arg(newpcb, (void*)(UINTPTR)connection);
+    tcp_err(c_pcb, tcp_enc_err);
 
-    /* increment for subsequent accepted connections */
+    connection++;
+    
     // FIFO initialization
-    //tcp_prt(newpcb, "Going to initialize FIFO...\r\n");
     xil_printf("Fifo initialization.\r\n");
     ret_val = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x00);
     xil_printf("[ISR ]: %08x\r\n", ret_val);
@@ -232,7 +193,6 @@ err_t accept_callback(void *arg, struct tcp_pcb *newpcb, err_t err)
         }
     }
     xil_printf("FIFO reset fin.\r\n");
-    //tcp_prt(newpcb, "FIFO reset fin.\r\n");
 
     return ERR_OK;
 }
@@ -243,6 +203,8 @@ int start_application()
     struct tcp_pcb *pcb;
     err_t err;
     unsigned port = 7;
+
+    IrigInstance->BaseAddress = XPAR_AXI_IRIG_READER_BASEADDR;
 
     // TCP protocol control block (PCB)
     pcb = tcp_new_ip_type(IPADDR_TYPE_ANY);

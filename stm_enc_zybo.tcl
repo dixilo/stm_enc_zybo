@@ -198,17 +198,17 @@ import_files -force -norecurse -fileset sources_1 $project_system_dir/hdl/system
 set_property top system_top [current_fileset]
 
 
-# # Synthesize
-# launch_runs synth_1
-# wait_on_run synth_1
-# open_run synth_1
-# report_timing_summary -file timing_synth.log
+# Synthesize
+launch_runs synth_1
+wait_on_run synth_1
+open_run synth_1
+report_timing_summary -file timing_synth.log
 
-# # Implementation
-# launch_runs impl_1 -to_step write_bitstream
-# wait_on_run impl_1
-# open_run impl_1
-# report_timing_summary -file timing_impl.log
+# Implementation
+launch_runs impl_1 -to_step write_bitstream
+wait_on_run impl_1
+open_run impl_1
+report_timing_summary -file timing_impl.log
 
-# Make .sdk folder
-# file copy -force $project_name.runs/impl_1/system_top.sysdef noos/system_top.hdf
+Make .sdk folder
+file copy -force $project_name.runs/impl_1/system_top.sysdef noos/system_top.hdf

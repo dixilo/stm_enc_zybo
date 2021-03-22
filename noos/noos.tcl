@@ -24,6 +24,8 @@ file copy -force platform_config.h sw/src/
 file copy -force platform.h sw/src/
 file copy -force platform.c sw/src/
 file copy -force platform_zynq.c sw/src/
+file copy -force axi_irig_reader.c sw/src/
+file copy -force axi_irig_reader.h sw/src/
 
 createapp -name fsbl -hwproject hw -proc $cpu_name -bsp bsp -app {Zynq FSBL}
 
