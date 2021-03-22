@@ -210,5 +210,5 @@ wait_on_run impl_1
 open_run impl_1
 report_timing_summary -file timing_impl.log
 
-Make .sdk folder
+#Make .sdk folder
 file copy -force $project_name.runs/impl_1/system_top.sysdef noos/system_top.hdf

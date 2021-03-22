@@ -8,7 +8,7 @@
 
 u32 IsReady(IrigReader *inst)
 {
-    Xil_AssertNonvoid(InstancePtr);
+    Xil_AssertNonvoid(inst);
 
     return Irig_ReadReg(inst->BaseAddress,
                         IRIG_SR_OFFSET);

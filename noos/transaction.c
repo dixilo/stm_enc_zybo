@@ -85,12 +85,10 @@ err_t transfer_data() {
         enc_data[i].status = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x20);
         enc_data[i].filler = 0x00;
         enc_data[i].header = 0x99;
-        data[i].footer = 0x66;
+        enc_data[i].footer = 0x66;
     }
 
     tcp_write(c_pcb, enc_data, read_length*sizeof(EncData), 1);
-
-    test_counter++;
 
     if (IsReady(IrigInstance) & 0x00000001){
         ret_val = GetIrigData(IrigInstance, irig_buf);
@@ -122,7 +120,7 @@ err_t recv_callback(void *arg, struct tcp_pcb *tpcb,
         GetIrigData(IrigInstance, irig_buf);
         InterpretIrig(irig_buf, irig_info);
 
-        tcp_write(tcpb, irig_buf, sizeof(IrigInfo), 1);
+        tcp_write(tpcb, irig_buf, sizeof(IrigInfo), 1);
     } else  {
         xil_printf("^_^;\r\n");
     }
