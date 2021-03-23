@@ -40,7 +40,7 @@ err_t transfer_data() {
     int i;
     int j = 0;
     EncData enc_data[DATA_LENGTH];
-    IrigInfo* irig_info;
+    IrigInfo irig_info;
     u32 irig_buf[6];
 
     u32 ret_val;
@@ -92,8 +92,10 @@ err_t transfer_data() {
     if (ret_val & 1){
     	xil_printf("irig detected!\r\n");
         ret_val = GetIrigData(&IrigInstance, irig_buf);
-        ret_val = InterpretIrig(irig_buf, irig_info);
-        tcp_write(c_pcb, irig_info, sizeof(IrigInfo), 1);
+        ret_val = InterpretIrig(irig_buf, &irig_info);
+        xil_printf("IrigInfo size: %d\r\n", sizeof(IrigInfo));
+        xil_printf("Irig sec: %d", irig_info.sec);
+        tcp_write(c_pcb, &irig_info, sizeof(IrigInfo), 1);
     }
 
     return ERR_OK;
