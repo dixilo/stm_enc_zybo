@@ -161,11 +161,11 @@ make_bd_pins_external  -name enc_in [get_bd_pins xlconcat_test/In0]
 make_bd_pins_external  -name irig_in [get_bd_pins axi_irig_reader/irig_in]
 
 # DEBUG
-set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {irig_in_1}]
-apply_bd_automation -rule xilinx.com:bd_rule:debug -dict [list \
-    [get_bd_nets irig_in_1] {PROBE_TYPE "Data and Trigger" CLK_SRC "/sys_ps7/FCLK_CLK0" SYSTEM_ILA "Auto" } \
-]
-set_property -dict [list CONFIG.C_BRAM_CNT {2} CONFIG.C_DATA_DEPTH {65536}] [get_bd_cells system_ila_0]
+# set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {irig_in_1}]
+# apply_bd_automation -rule xilinx.com:bd_rule:debug -dict [list \
+#     [get_bd_nets irig_in_1] {PROBE_TYPE "Data and Trigger" CLK_SRC "/sys_ps7/FCLK_CLK0" SYSTEM_ILA "Auto" } \
+# ]
+# set_property -dict [list CONFIG.C_BRAM_CNT {2} CONFIG.C_DATA_DEPTH {65536}] [get_bd_cells system_ila_0]
 
 
 # set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {enc_reader/m_axis}]
@@ -173,10 +173,10 @@ set_property -dict [list CONFIG.C_BRAM_CNT {2} CONFIG.C_DATA_DEPTH {65536}] [get
 # set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {enc_packet/m_axis}]
 # set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {util_reduced/logic_Res }]
 
-set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {enc_reader_m_axis}]
-set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {axis_data_fifo_M_AXIS}]
-set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {enc_packet_m_axis}]
-set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {enc_in_1 }]
+# set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {enc_reader_m_axis}]
+# set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {axis_data_fifo_M_AXIS}]
+# set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets {enc_packet_m_axis}]
+# set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {enc_in_1 }]
 
 # apply_bd_automation -rule xilinx.com:bd_rule:debug -dict [list \
 #    [get_bd_intf_nets enc_packet_m_axis] {AXIS_SIGNALS "Data and Trigger" CLK_SRC "/sys_ps7/FCLK_CLK0" SYSTEM_ILA "Auto" APC_EN "0" } \

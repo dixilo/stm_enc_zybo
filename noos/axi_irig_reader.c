@@ -8,7 +8,7 @@
 
 u32 IsReady(IrigReader *inst)
 {
-    Xil_AssertNonvoid(inst);
+    //Xil_AssertNonvoid(inst);
 
     return Irig_ReadReg(inst->BaseAddress,
                         IRIG_SR_OFFSET);
@@ -18,7 +18,7 @@ u32 GetIrigData(IrigReader *inst, void* buf_ptr)
 {
     u32 *buf_ptr_idx = (u32 *)buf_ptr;
 
-    Xil_AssertNonvoid(inst);
+    //Xil_AssertNonvoid(inst);
 
     buf_ptr_idx[0] = Irig_ReadReg(inst->BaseAddress, IRIG_DATA_0);
     buf_ptr_idx[1] = Irig_ReadReg(inst->BaseAddress, IRIG_DATA_1);

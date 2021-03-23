@@ -18,7 +18,7 @@
 
 
 static struct tcp_pcb *c_pcb;
-IrigReader* IrigInstance;
+static IrigReader IrigInstance;
 
 #pragma pack(1)
 typedef struct EncData{
@@ -55,43 +55,43 @@ err_t transfer_data() {
     // Sleep 
     usleep(SLEEP_TIME_US);
 
-    while(1){ // Wait until at least one successful receive has completed
-        // Interrupt Status Register
-        ret_val = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x00);
-        if(ret_val & (1<<26)){ // Interrupt pending
-            // RC clear & RFPE clear
-            Xil_Out32(XPAR_AXI_FIFO_0_BASEADDR + 0x00, (1<<26) + (1<<19));
-            break;
-        }
-    }
-
     ret_val = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x00);
 
-    // Receive Data FIFO Occupancy Register
-    ret_val = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x1C);
-    // Data packet [TS LSB][TS MSB][STATE]: 3*4 bytes
-    read_length = ret_val/3;
+    if(ret_val & (1<<26)){
+    	xil_printf("pulse detected!\r\n");
+    	Xil_Out32(XPAR_AXI_FIFO_0_BASEADDR + 0x00, (1<<26) + (1<<19));
+    	ret_val = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x00);
 
-    for( i=0; i < read_length; i++ ){
-        // Recieve Length Register
-        ret_val = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x24);
-        // Each AXIS packet has [TS LSB][TS MSB][STATE]: 3*4 bytes
-        if( ret_val != 12 ){ 
-            break;
-        }
+		// Receive Data FIFO Occupancy Register
+		ret_val = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x1C);
+		// Data packet [TS LSB][TS MSB][STATE]: 3*4 bytes
+		read_length = ret_val/3;
 
-        enc_data[i].ts_lsb = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x20);
-        enc_data[i].ts_msb = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x20);
-        enc_data[i].status = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x20);
-        enc_data[i].filler = 0x00;
-        enc_data[i].header = 0x99;
-        enc_data[i].footer = 0x66;
+		for( i=0; i < read_length; i++ ){
+			// Recieve Length Register
+			ret_val = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x24);
+			// Each AXIS packet has [TS LSB][TS MSB][STATE]: 3*4 bytes
+			if( ret_val != 12 ){
+				break;
+			}
+
+			enc_data[i].ts_lsb = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x20);
+			enc_data[i].ts_msb = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x20);
+			enc_data[i].status = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x20);
+			enc_data[i].filler = 0x00;
+			enc_data[i].header = 0x99;
+			enc_data[i].footer = 0x66;
+		}
+
+		tcp_write(c_pcb, enc_data, read_length*sizeof(EncData), 1);
     }
 
-    tcp_write(c_pcb, enc_data, read_length*sizeof(EncData), 1);
+    // ret_val = IsReady(&IrigInstance);
+    ret_val = Xil_In32(XPAR_AXI_IRIG_READER_BASEADDR);
 
-    if (IsReady(IrigInstance) & 0x00000001){
-        ret_val = GetIrigData(IrigInstance, irig_buf);
+    if (ret_val & 1){
+    	xil_printf("irig detected!\r\n");
+        ret_val = GetIrigData(&IrigInstance, irig_buf);
         ret_val = InterpretIrig(irig_buf, irig_info);
         tcp_write(c_pcb, irig_info, sizeof(IrigInfo), 1);
     }
@@ -117,7 +117,7 @@ err_t recv_callback(void *arg, struct tcp_pcb *tpcb,
     tcp_recved(tpcb, p->len);
     if (strcmp(p->payload, "e#irig") == 0){
         xil_printf("Read irig info");
-        GetIrigData(IrigInstance, irig_buf);
+        GetIrigData(&IrigInstance, irig_buf);
         InterpretIrig(irig_buf, irig_info);
 
         tcp_write(tpcb, irig_buf, sizeof(IrigInfo), 1);
@@ -202,7 +202,7 @@ int start_application()
     err_t err;
     unsigned port = 7;
 
-    IrigInstance->BaseAddress = XPAR_AXI_IRIG_READER_BASEADDR;
+    IrigInstance.BaseAddress = XPAR_AXI_IRIG_READER_BASEADDR;
 
     // TCP protocol control block (PCB)
     pcb = tcp_new_ip_type(IPADDR_TYPE_ANY);

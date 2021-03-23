@@ -26,29 +26,32 @@ module b002_decoder(
     localparam IRIG_TIMER_1  = 20'd325000; // 6.5 ms
     localparam IRIG_TIMER_PI = 20'd614400; // max
 
-    reg [2:0]  state;       // state for the state machine below
-    reg        irig_buf;
-    reg        pw_proc;     // indicates pulse width measurement going on
-    reg        pw_proc_buf;
-    reg [19:0] pulse_width; // pulse width
+    (* mark_debug = "true" *) reg [2:0]  state;       // state for the state machine below
+    (* mark_debug = "true" *) reg        irig_buf;
+    (* mark_debug = "true" *) reg        irig_buf_buf;
+    (* mark_debug = "true" *) reg        pw_proc;     // indicates pulse width measurement going on
+    (* mark_debug = "true" *) reg        pw_proc_buf;
+    (* mark_debug = "true" *) reg [19:0] pulse_width; // pulse width
     reg [63:0] rising_edge, falling_edge, sync_edge;
-    wire       rising, falling;
-    wire       pw_valid;    // pulse width valid
-    reg [1:0]  pulse_type;
+    (* mark_debug = "true" *) wire       rising;
+    (* mark_debug = "true" *) wire       falling;
+    (* mark_debug = "true" *) wire       pw_valid;    // pulse width valid
+    (* mark_debug = "true" *) reg [1:0]  pulse_type;
 
-    reg [7:0]  bit_position;
+    (* mark_debug = "true" *) reg [7:0]  bit_position;
     reg [3:0]  sub_position;
     reg [99:0] output_buf;
 
     // irig_bufer
     always @(posedge clk_50MHz) begin
         irig_buf <= irig_in;
+        irig_buf_buf <= irig_buf;
     end
 
     // rising edge
-    assign rising = (irig_in == 1) && (irig_buf == 0);
+    assign rising = (irig_buf == 1) && (irig_buf_buf == 0);
     // falling edge
-    assign falling = (irig_in == 0) && (irig_buf == 1);
+    assign falling = (irig_buf == 0) && (irig_buf_buf == 1);
 
     // pulse width
     always @(posedge clk_50MHz) begin
@@ -148,7 +151,7 @@ module b002_decoder(
 
     // AXI stream
     // TODO: data should be split into 32/64 bit for efficent use of resources
-    assign m_axis_tvalid = (pw_valid) & (bit_position == 99) & (pulse_type == IRIG_PI);
+    (* mark_debug = "true" *) assign m_axis_tvalid = (pw_valid) & (bit_position == 99) & (pulse_type == IRIG_PI);
     assign m_axis_tlast = m_axis_tvalid;
     assign m_axis_tdata = {sync_edge, output_buf};
 
