@@ -90,7 +90,6 @@ int main()
             TcpSlowTmrFlag = 0;
         }
         xemacif_input(echo_netif);
-        transfer_data();
     }
   
 

@@ -35,7 +35,7 @@ err_t tcp_prt(struct tcp_pcb *pcb, const char* prt_char){
     return tcp_write(pcb, prt_char, strlen(prt_char), 1);
 }
 
-err_t transfer_data() {
+err_t enc_traffic() {
     u32 read_length;
     int i;
     int j = 0;
@@ -53,7 +53,7 @@ err_t transfer_data() {
     }
 
     // Sleep 
-    usleep(SLEEP_TIME_US);
+    // usleep(SLEEP_TIME_US);
 
     ret_val = Xil_In32(XPAR_AXI_FIFO_0_BASEADDR + 0x00);
 
@@ -133,6 +133,11 @@ err_t recv_callback(void *arg, struct tcp_pcb *tpcb,
     return ERR_OK;
 }
 
+static err_t tcp_enc_sent(void* arg, struct tcp_pcb* tpcb, u16_t len)
+{
+    return enc_traffic();
+}
+
 // TCP connection close
 static void tcp_enc_close(struct tcp_pcb *pcb)
 {
@@ -164,10 +169,7 @@ err_t accept_callback(void *arg, struct tcp_pcb *newpcb, err_t err)
     u32 ret_val;
 
     // callback registration
-    tcp_recv(newpcb, recv_callback);
     c_pcb = newpcb;
-    tcp_err(c_pcb, tcp_enc_err);
-
     connection++;
     
     // FIFO initialization
@@ -193,6 +195,10 @@ err_t accept_callback(void *arg, struct tcp_pcb *newpcb, err_t err)
         }
     }
     xil_printf("FIFO reset fin.\r\n");
+
+    tcp_recv(c_pcb, recv_callback);
+    tcp_err(c_pcb, tcp_enc_err);
+    tcp_sent(c_pcb, tcp_enc_sent);
 
     return ERR_OK;
 }
