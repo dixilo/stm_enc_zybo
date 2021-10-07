@@ -23,8 +23,21 @@ module system_top(
     inout FIXED_IO_ps_porb,
     inout FIXED_IO_ps_srstb,
     
-    input enc_in,
+    input enc_in_p,
+    input enc_in_n,
     input irig_in);
+
+    wire enc_in;
+
+    // Differential to single end
+    IBUFDS #(
+        .DQS_BIAS("FALSE")
+    )
+    IBUFDS_inst (
+        .O(enc_in),
+        .I(enc_in_p), 
+        .IB(enc_in_n)
+    );
 
     system_wrapper i_system_wrapper
         (.DDR_addr(DDR_addr),
